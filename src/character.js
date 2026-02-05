@@ -101,7 +101,6 @@ export class Character extends Container {
         this.hitArea = new Circle(0, 0, this.size);
 
         this.on('pointerdown', this.onPointerDown, this);
-        this.on('pointermove', this.onPointerMove, this);
         this.on('pointerup', this.onPointerUp, this);
         this.on('pointerupoutside', this.onPointerUp, this);
     }

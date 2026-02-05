@@ -56,9 +56,25 @@ export class Game extends Container {
 
         this.setupBackground();
         this.setupCharacter();
+        this.setupDragListeners();
 
         window.addEventListener('resize', () => {
             this.onResize();
+        });
+    }
+
+    /**
+     * ドラッグリスナーのセットアップ
+     * @method setupDragListeners
+     * @private
+     */
+    setupDragListeners() {
+        this.app.stage.on('pointermove', (event) => {
+            for (const character of this.characters) {
+                if (character.isDragging) {
+                    character.onPointerMove(event);
+                }
+            }
         });
     }
 
