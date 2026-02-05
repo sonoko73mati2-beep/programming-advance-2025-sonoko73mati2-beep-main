@@ -45,6 +45,20 @@ export class Character extends Container {
          */
         this.graphics = null;
 
+        /**
+         * ドラッグ中フラグ
+         * @type {boolean}
+         * @private
+         */
+        this.isDragging = false;
+
+        /**
+         * ドラッグ時のオフセット
+         * @type {{x: number, y: number}}
+         * @private
+         */
+        this.dragOffset = { x: 0, y: 0 };
+
         this.x = x;
         this.y = y;
 
@@ -88,7 +102,6 @@ export class Character extends Container {
 
         this.on('pointerdown', this.onPointerDown, this);
         this.on('pointerup', this.onPointerUp, this);
-        this.on('pointerupoutside', this.onPointerUp, this);
     }
 
     /**
@@ -97,8 +110,15 @@ export class Character extends Container {
      * @param {FederatedPointerEvent} event - ポインターイベントオブジェクト
      */
     onPointerDown(event) {
+        this.isDragging = true;
+        const colorHex = '0x' + this.color.toString(16).padStart(6, '0').toUpperCase();
         console.log('PointerDown: キャラクターが押されました');
+        console.log('色:', colorHex);
         console.log('位置:', this.x, this.y);
+
+        // ドラッグオフセットを計算
+        this.dragOffset.x = event.global.x - this.x;
+        this.dragOffset.y = event.global.y - this.y;
     }
 
     /**
@@ -107,6 +127,7 @@ export class Character extends Container {
      * @param {FederatedPointerEvent} event - ポインターイベントオブジェクト
      */
     onPointerUp(event) {
+        this.isDragging = false;
         console.log('PointerUp: キャラクターが離されました');
     }
 
