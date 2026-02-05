@@ -97,7 +97,9 @@ export class Character extends Container {
      * @param {FederatedPointerEvent} event - ポインターイベントオブジェクト
      */
     onPointerDown(event) {
-        console.log('PointerDown: キャラクターが押されました');
+        const colorHex = '0x' + this.color.toString(16).padStart(6, '0').toUpperCase();
+        console.log('PoインターDown: キャラクターが押されました');
+        console.log('色:', colorHex);
         console.log('位置:', this.x, this.y);
     }
 
