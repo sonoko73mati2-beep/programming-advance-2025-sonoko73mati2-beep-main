@@ -82,6 +82,11 @@ class Init {
     const app = await init.setup();
     const game = new Game(app);
 
+    const fallbackMessage = document.getElementById('fallback-message');
+    if (fallbackMessage) {
+        fallbackMessage.remove();
+    }
+
     app.stage.addChild(game);
 
     app.ticker.add((ticker) => {

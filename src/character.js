@@ -102,7 +102,6 @@ export class Character extends Container {
 
         this.on('pointerdown', this.onPointerDown, this);
         this.on('pointerup', this.onPointerUp, this);
-        this.on('pointerupoutside', this.onPointerUp, this);
     }
 
     /**
@@ -113,26 +112,13 @@ export class Character extends Container {
     onPointerDown(event) {
         this.isDragging = true;
         const colorHex = '0x' + this.color.toString(16).padStart(6, '0').toUpperCase();
-        console.log('PoインターDown: キャラクターが押されました');
+        console.log('PointerDown: キャラクターが押されました');
         console.log('色:', colorHex);
         console.log('位置:', this.x, this.y);
 
         // ドラッグオフセットを計算
         this.dragOffset.x = event.global.x - this.x;
         this.dragOffset.y = event.global.y - this.y;
-    }
-
-    /**
-     * ポインター移動時のイベントハンドラ
-     * @method onPointerMove
-     * @param {FederatedPointerEvent} event - ポインターイベントオブジェクト
-     */
-    onPointerMove(event) {
-        if (this.isDragging) {
-            // キャラクターの位置を更新
-            this.x = event.global.x - this.dragOffset.x;
-            this.y = event.global.y - this.dragOffset.y;
-        }
     }
 
     /**
