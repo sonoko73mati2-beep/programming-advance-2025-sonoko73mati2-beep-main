@@ -37,11 +37,11 @@ export class Game extends Container {
         this.background = null;
 
         /**
-         * キャラクターインスタンス
-         * @type {Character}
+         * キャラクターインスタンス配列
+         * @type {Character[]}
          * @private
          */
-        this.character = null;
+        this.characters = [];
 
         this.init();
     }
@@ -90,11 +90,19 @@ export class Game extends Container {
      * @private
      */
     setupCharacter() {
-        const centerX = this.app.screen.width / 2;
-        const centerY = this.app.screen.height / 2;
+        // 3つの異なる色
+        const colors = [0xff6b6b, 0x4ecdc4, 0xffe66d];
 
-        this.character = new Character(centerX, centerY);
-        this.addChild(this.character);
+        for (let i = 0; i < 3; i++) {
+            // ランダムな位置を生成
+            const randomX = Math.random() * (this.app.screen.width - 100) + 50;
+            const randomY = Math.random() * (this.app.screen.height - 100) + 50;
+
+            // キャラクターをインスタンス化
+            const character = new Character(randomX, randomY, 50, colors[i]);
+            this.addChild(character);
+            this.characters.push(character);
+        }
     }
 
     /**
@@ -111,8 +119,8 @@ export class Game extends Container {
      * @param {number} delta - 前フレームからの経過時間（60FPS基準で1.0が標準）
      */
     update(delta) {
-        if (this.character) {
-            this.character.update(delta);
+        for (const character of this.characters) {
+            character.update(delta);
         }
     }
 }
