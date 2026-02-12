@@ -6,6 +6,7 @@
 
 import { Container, Graphics, Rectangle } from 'pixi.js';
 import { Character } from './character.js';
+import { Monster } from './monster.js';
 
 /**
  * ゲームのメイン画面クラス
@@ -43,6 +44,13 @@ export class Game extends Container {
          */
         this.characters = [];
 
+        /**
+         * モンスターインスタンス配列
+         * @type {Monster[]}
+         * @private
+         */
+        this.monsters = [];
+
         this.init();
     }
 
@@ -58,6 +66,7 @@ export class Game extends Container {
 
         this.setupBackground();
         this.setupCharacter();
+        this.setupMonster();
         this.setupDragListeners();
 
         window.addEventListener('resize', () => {
@@ -74,8 +83,7 @@ export class Game extends Container {
         this.app.stage.on('pointermove', (event) => {
             for (const character of this.characters) {
                 if (character.isDragging) {
-                    character.x = event.global.x - character.dragOffset.x;
-                    character.y = event.global.y - character.dragOffset.y;
+                    character.updateDrag(event);
                 }
             }
         });
@@ -146,18 +154,37 @@ export class Game extends Container {
     setupCharacter() {
         const { width, height } = this.getStageSize();
 
-        // 3つの異なる色
-        const colors = [0xff6b6b, 0x4ecdc4, 0xffe66d];
+        // ランダムな位置を生成
+        const randomX = Math.random() * (width - 100) + 50;
+        const randomY = Math.random() * (height - 100) + 50;
+
+        // キャラクターをインスタンス化（1体のみ、モンスターの1/2のサイズ）
+        const character = new Character(randomX, randomY, 25, 0xff6b6b);
+        this.addChild(character);
+        this.characters.push(character);
+    }
+
+    /**
+     * モンスターのセットアップ
+     * @method setupMonster
+     * @private
+     */
+    setupMonster() {
+        const { width, height } = this.getStageSize();
+
+        // 3つの異なる色（少し暗めの色）
+        const colors = [0x8b0000, 0x006400, 0xff8c00];
 
         for (let i = 0; i < 3; i++) {
             // ランダムな位置を生成
             const randomX = Math.random() * (width - 100) + 50;
             const randomY = Math.random() * (height - 100) + 50;
 
-            // キャラクターをインスタンス化
-            const character = new Character(randomX, randomY, 50, colors[i]);
-            this.addChild(character);
-            this.characters.push(character);
+            // モンスターをインスタンス化（攻撃力を指定）
+            const attackPower = 10 + i * 5; // 各モンスターで異なる攻撃力
+            const monster = new Monster(randomX, randomY, 50, colors[i], attackPower);
+            this.addChild(monster);
+            this.monsters.push(monster);
         }
     }
 
@@ -171,13 +198,55 @@ export class Game extends Container {
     }
 
     /**
+     * キャラクターとモンスターの当たり判定
+     * @method checkCollisions
+     * @private
+     */
+    checkCollisions() {
+        for (const character of this.characters) {
+            for (const monster of this.monsters) {
+                // 中心間の距離を計算
+                const dx = monster.x - character.x;
+                const dy = monster.y - character.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                // 2つの円の半径の合計
+                const minDistance = character.size + monster.size;
+
+                // 衝突判定
+                if (distance < minDistance) {
+                    // ダメージ処理（無敵時間を考慮）
+                    character.takeDamage(monster.attackPower);
+
+                    // 重ならないように離す
+                    const overlap = minDistance - distance;
+                    const nx = dx / distance;
+                    const ny = dy / distance;
+                    character.x -= nx * overlap * 0.5;
+                    character.y -= ny * overlap * 0.5;
+                    monster.x += nx * overlap * 0.5;
+                    monster.y += ny * overlap * 0.5;
+                }
+            }
+        }
+    }
+
+    /**
      * フレーム更新処理
      * @method update
      * @param {number} delta - 前フレームからの経過時間（60FPS基準で1.0が標準）
      */
     update(delta) {
+        const bounds = this.getStageSize();
+
         for (const character of this.characters) {
-            character.update(delta);
+            character.update(delta, bounds);
         }
+        for (const monster of this.monsters) {
+            monster.update(delta, bounds);
+        }
+
+        // 当たり判定をチェック
+        this.checkCollisions();
     }
 }
