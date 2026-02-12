@@ -5,7 +5,9 @@
  */
 
 import { Application } from 'pixi.js';
+import { Opening } from './opening.js';
 import { Game } from './game.js';
+import { Ending } from './ending.js';
 
 /**
  * PixiJSアプリケーションの初期化クラス
@@ -75,21 +77,150 @@ class Init {
 }
 
 /**
+ * ゲーム画面遷移管理クラス
+ * @class GameManager
+ * @description Opening → Game → Ending の画面遷移を管理
+ */
+class GameManager {
+    /**
+     * GameManagerクラスのコンストラクタ
+     * @constructor
+     * @param {Application} app - PixiJSアプリケーションインスタンス
+     */
+    constructor(app) {
+        /**
+         * PixiJSアプリケーションインスタンス
+         * @type {Application}
+         * @private
+         */
+        this.app = app;
+
+        /**
+         * 現在のシーン
+         * @type {Container|null}
+         * @private
+         */
+        this.currentScene = null;
+
+        /**
+         * ゲームループ用のティッカー関数
+         * @type {Function|null}
+         * @private
+         */
+        this.tickerFunction = null;
+
+        // リサイズ処理を設定
+        window.addEventListener('resize', () => {
+            this.onResize();
+        });
+
+        this.showOpening();
+    }
+
+    /**
+     * ウィンドウリサイズ時のコールバック処理
+     * @method onResize
+     */
+    onResize() {
+        if (this.currentScene && this.currentScene.onResize) {
+            this.currentScene.onResize();
+        }
+    }
+
+    /**
+     * 現在のシーンをクリア
+     * @method clearScene
+     * @private
+     */
+    clearScene() {
+        // ティッカーを削除
+        if (this.tickerFunction) {
+            this.app.ticker.remove(this.tickerFunction);
+            this.tickerFunction = null;
+        }
+
+        // シーンを削除
+        if (this.currentScene) {
+            this.app.stage.removeChild(this.currentScene);
+            this.currentScene = null;
+        }
+    }
+
+    /**
+     * オープニング画面を表示
+     * @method showOpening
+     */
+    showOpening() {
+        this.clearScene();
+
+        const opening = new Opening(this.app);
+        opening.onComplete = () => {
+            this.showGame();
+        };
+
+        this.app.stage.addChild(opening);
+        this.currentScene = opening;
+
+        console.log('Opening画面を表示');
+    }
+
+    /**
+     * ゲーム画面を表示
+     * @method showGame
+     */
+    showGame() {
+        this.clearScene();
+
+        const game = new Game(this.app);
+        game.onComplete = (isVictory) => {
+            this.showEnding(isVictory);
+        };
+
+        this.app.stage.addChild(game);
+        this.currentScene = game;
+
+        // ゲームループを開始
+        this.tickerFunction = (ticker) => {
+            game.update(ticker.deltaTime);
+        };
+        this.app.ticker.add(this.tickerFunction);
+
+        console.log('Game画面を表示');
+    }
+
+    /**
+     * エンディング画面を表示
+     * @method showEnding
+     * @param {boolean} isVictory - 勝利したかどうか
+     */
+    showEnding(isVictory) {
+        this.clearScene();
+
+        const ending = new Ending(this.app, isVictory);
+        ending.onComplete = () => {
+            this.showOpening();
+        };
+
+        this.app.stage.addChild(ending);
+        this.currentScene = ending;
+
+        console.log('Ending画面を表示:', isVictory ? 'Victory' : 'Game Over');
+    }
+}
+
+/**
  * アプリケーションのメインエントリーポイント
  */
 (async () => {
     const init = new Init();
     const app = await init.setup();
-    const game = new Game(app);
 
+    // フォールバックメッセージを削除
     const fallbackMessage = document.getElementById('fallback-message');
     if (fallbackMessage) {
         fallbackMessage.remove();
     }
 
-    app.stage.addChild(game);
-
-    app.ticker.add((ticker) => {
-        game.update(ticker.deltaTime);
-    });
+    // ゲーム画面遷移管理を開始
+    new GameManager(app);
 })();
