@@ -54,6 +54,13 @@ export class Monster extends Container {
         this.attackPowerText = null;
 
         /**
+         * HPテキストオブジェクト
+         * @type {Text}
+         * @private
+         */
+        this.hpText = null;
+
+        /**
          * ドラッグ中フラグ
          * @type {boolean}
          * @private
@@ -84,6 +91,18 @@ export class Monster extends Container {
         // 攻撃力が負にならないように制限
         if (this.attackPower < 1) {
             this.attackPower = 1;
+        }
+
+        /**
+         * 体力
+         * @type {number}
+         * @private
+         */
+        this.hp = 200 + (Math.floor(Math.random() * 41) - 20); // ±20の範囲でランダム (180-220)
+        
+        // HPが負にならないように制限
+        if (this.hp < 1) {
+            this.hp = 1;
         }
 
         /**
@@ -126,6 +145,19 @@ export class Monster extends Container {
         this.graphics.circle(0, 0, this.size);
         this.graphics.fill(this.color);
         this.addChild(this.graphics);
+
+        // HPテキストを作成
+        this.hpText = new Text({
+            text: `HP: ${this.hp}`,
+            style: {
+                fontSize: 14,
+                fill: 0xffffff,
+                fontWeight: 'bold'
+            }
+        });
+        this.hpText.anchor.set(0.5, 0.5);
+        this.hpText.y = -this.size - 35; // 攻撃力テキストの上に配置
+        this.addChild(this.hpText);
 
         // 攻撃力テキストを作成
         this.attackPowerText = new Text({
@@ -193,6 +225,9 @@ export class Monster extends Container {
      * @param {number} delta - 前フレームからの経過時間
      */
     update(delta, bounds) {
-        // 攻撃力は固定（初期化時に設定済み）
+        // HPテキストを更新
+        if (this.hpText) {
+            this.hpText.text = `HP: ${this.hp}`;
+        }
     }
 }

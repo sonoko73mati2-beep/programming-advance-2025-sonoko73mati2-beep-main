@@ -67,6 +67,27 @@ export class Character extends Container {
         this.dragOffset = { x: 0, y: 0 };
 
         /**
+         * 前回の位置
+         * @type {{x: number, y: number}}
+         * @private
+         */
+        this.lastPosition = { x: 0, y: 0 };
+
+        /**
+         * 移動ベクトル
+         * @type {{x: number, y: number}}
+         * @private
+         */
+        this.dragVelocity = { x: 0, y: 0 };
+
+        /**
+         * 球発射時のコールバック関数
+         * @type {Function|null}
+         * @private
+         */
+        this.onShootBall = null;
+
+        /**
          * 体力
          * @type {number}
          * @private
@@ -160,6 +181,12 @@ export class Character extends Container {
         // ドラッグオフセットを計算
         this.dragOffset.x = event.global.x - this.x;
         this.dragOffset.y = event.global.y - this.y;
+        
+        // 前回の位置を記録
+        this.lastPosition.x = this.x;
+        this.lastPosition.y = this.y;
+        this.dragVelocity.x = 0;
+        this.dragVelocity.y = 0;
     }
 
     /**
@@ -168,6 +195,14 @@ export class Character extends Container {
      * @param {FederatedPointerEvent} event - ポインターイベントオブジェクト
      */
     onPointerUp(event) {
+        if (this.isDragging) {
+            // 球を発射
+            if (this.onShootBall && (this.dragVelocity.x !== 0 || this.dragVelocity.y !== 0)) {
+                this.onShootBall(this.x, this.y, this.dragVelocity.x, this.dragVelocity.y);
+                console.log('球を発射:', this.dragVelocity);
+            }
+        }
+        
         this.isDragging = false;
         console.log('PointerUp: キャラクターが離されました');
     }
@@ -182,8 +217,18 @@ export class Character extends Container {
             return;
         }
 
-        this.x = event.global.x - this.dragOffset.x;
-        this.y = event.global.y - this.dragOffset.y;
+        const newX = event.global.x - this.dragOffset.x;
+        const newY = event.global.y - this.dragOffset.y;
+        
+        // 移動ベクトルを計算
+        this.dragVelocity.x = newX - this.lastPosition.x;
+        this.dragVelocity.y = newY - this.lastPosition.y;
+        
+        // 位置を更新
+        this.lastPosition.x = this.x;
+        this.lastPosition.y = this.y;
+        this.x = newX;
+        this.y = newY;
     }
 
     /**
