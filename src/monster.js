@@ -4,7 +4,7 @@
  * @version 2.0.0
  */
 
-import { Container, Graphics, Circle } from 'pixi.js';
+import { Container, Graphics, Circle, Text } from 'pixi.js';
 
 /**
  * モンスタークラス
@@ -47,6 +47,13 @@ export class Monster extends Container {
         this.graphics = null;
 
         /**
+         * 攻撃力テキストオブジェクト
+         * @type {Text}
+         * @private
+         */
+        this.attackPowerText = null;
+
+        /**
          * ドラッグ中フラグ
          * @type {boolean}
          * @private
@@ -72,7 +79,12 @@ export class Monster extends Container {
          * @type {number}
          * @private
          */
-        this.attackPower = attackPower;
+        this.attackPower = attackPower + (Math.floor(Math.random() * 5) - 2); // ±2の範囲でランダム
+        
+        // 攻撃力が負にならないように制限
+        if (this.attackPower < 1) {
+            this.attackPower = 1;
+        }
 
         /**
          * 直近のポインター位置
@@ -114,6 +126,19 @@ export class Monster extends Container {
         this.graphics.circle(0, 0, this.size);
         this.graphics.fill(this.color);
         this.addChild(this.graphics);
+
+        // 攻撃力テキストを作成
+        this.attackPowerText = new Text({
+            text: `ATK: ${this.attackPower}`,
+            style: {
+                fontSize: 14,
+                fill: 0xffffff,
+                fontWeight: 'bold'
+            }
+        });
+        this.attackPowerText.anchor.set(0.5, 0.5);
+        this.attackPowerText.y = -this.size - 15;
+        this.addChild(this.attackPowerText);
     }
 
     /**
@@ -168,6 +193,6 @@ export class Monster extends Container {
      * @param {number} delta - 前フレームからの経過時間
      */
     update(delta, bounds) {
-        // ドラッグ＆ドロップのみ。物理演算なし
+        // 攻撃力は固定（初期化時に設定済み）
     }
 }
