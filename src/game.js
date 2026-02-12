@@ -358,7 +358,14 @@ export class Game extends Container {
 
         for (const character of this.characters) {
             character.update(delta, bounds);
+            
+            // キャラクターが死亡したか判定
+            if (character.hp <= 0) {
+                this.endGame(false); // 敗北
+                return;
+            }
         }
+        
         for (const monster of this.monsters) {
             monster.update(delta, bounds);
         }
@@ -375,5 +382,12 @@ export class Game extends Container {
 
         // 当たり判定をチェック
         this.checkCollisions();
+        
+        // すべてのモンスターが倒されたか判定
+        const allMonstersDefeated = this.monsters.every(monster => monster.hp <= 0);
+        if (allMonstersDefeated && this.monsters.length > 0) {
+            this.endGame(true); // 勝利
+            return;
+        }
     }
 }
