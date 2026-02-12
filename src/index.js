@@ -23,6 +23,9 @@ import startSoundUrl from '../assets/効果音１.mp3';
 import gameOverSoundUrl from '../assets/効果音２.mp3';
 import gameOverEnterSoundUrl from '../assets/効果音３.mp3';
 import timeUpSoundUrl from '../assets/効果音４.mp3';
+import patSoundUrl from '../assets/パッ.mp3';
+import papaSoundUrl from '../assets/パパッ.mp3';
+import petaSoundUrl from '../assets/ペタッ.mp3';
 
 /**
  * PixiJSアプリケーションの初期化クラス
@@ -53,7 +56,7 @@ class Init {
     async setup() {
         this.app = new Application();
 
-        await Assets.load([fishImageUrl, subFishImageUrl, subFish2ImageUrl, subFish3ImageUrl, subFish4ImageUrl, subFish5ImageUrl, sharkImageUrl, bgmUrl, backgroundImageUrl, titleImageUrl, startButtonImageUrl, startSoundUrl, gameOverSoundUrl, gameOverEnterSoundUrl, timeUpSoundUrl]);
+        await Assets.load([fishImageUrl, subFishImageUrl, subFish2ImageUrl, subFish3ImageUrl, subFish4ImageUrl, subFish5ImageUrl, sharkImageUrl, bgmUrl, backgroundImageUrl, titleImageUrl, startButtonImageUrl, startSoundUrl, gameOverSoundUrl, gameOverEnterSoundUrl, timeUpSoundUrl, patSoundUrl, papaSoundUrl, petaSoundUrl]);
 
         await this.app.init({
             width: window.innerWidth,

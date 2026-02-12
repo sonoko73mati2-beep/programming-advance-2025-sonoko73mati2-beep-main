@@ -15,6 +15,9 @@ import subFish5ImageUrl from '../assets/Subfish_5.PNG';
 import sharkImageUrl from '../assets/shark.PNG';
 import bgmUrl from '../assets/437_long_BPM120.mp3';
 import backgroundImageUrl from '../assets/background.jpg';
+import patSoundUrl from '../assets/パッ.mp3';
+import papaSoundUrl from '../assets/パパッ.mp3';
+import petaSoundUrl from '../assets/ペタッ.mp3';
 
 /**
  * ゲームのメイン画面クラス
@@ -506,6 +509,25 @@ export class Game extends Container {
     }
 
     /**
+     * ランダムに敵倒時の効果音を再生
+     * @method playRandomDefeatSound
+     * @private
+     */
+    playRandomDefeatSound() {
+        const soundUrls = [patSoundUrl, papaSoundUrl, petaSoundUrl];
+        const randomIndex = Math.floor(Math.random() * soundUrls.length);
+        const selectedUrl = soundUrls[randomIndex];
+
+        const defeatSound = new Audio(selectedUrl);
+        defeatSound.volume = 0.6;
+
+        const playPromise = defeatSound.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {});
+        }
+    }
+
+    /**
      * 画面端からモンスターをスポーンする
      * @method spawnMonster
      * @private
@@ -605,6 +627,9 @@ export class Game extends Container {
                         if (this.scoreText) {
                             this.scoreText.text = `SCORE: ${this.score.toFixed(2)}`;
                         }
+
+                        // ランダムに効果音を再生
+                        this.playRandomDefeatSound();
 
                         // 敵を画面から削除
                         this.removeChild(monster);
