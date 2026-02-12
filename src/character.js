@@ -4,7 +4,8 @@
  * @version 2.0.0
  */
 
-import { Container, Graphics, Circle, Text } from 'pixi.js';
+import { Container, Circle, Sprite, Text } from 'pixi.js';
+import fishImageUrl from '../assets/fish.png';
 
 /**
  * キャラクタークラス
@@ -45,12 +46,6 @@ export class Character extends Container {
          */
         this.graphics = null;
 
-        /**
-         * HPテキストオブジェクト
-         * @type {Text}
-         * @private
-         */
-        this.hpText = null;
 
         /**
          * ドラッグ中フラグ
@@ -80,12 +75,17 @@ export class Character extends Container {
          */
         this.dragVelocity = { x: 0, y: 0 };
 
-        /**
-         * 球発射時のコールバック関数
-         * @type {Function|null}
+        /**         * サイズテキストオブジェクト
+         * @type {Text}
          * @private
          */
-        this.onShootBall = null;
+        this.sizeText = null;
+
+        /**         * 直近のX座標（左右反転判定用）
+         * @type {number}
+         * @private
+         */
+        this.lastFlipX = x;
 
         /**
          * 体力
@@ -130,23 +130,24 @@ export class Character extends Container {
      * @private
      */
     createGraphics() {
-        this.graphics = new Graphics();
-        this.graphics.circle(0, 0, this.size);
-        this.graphics.fill(this.color);
+        this.graphics = Sprite.from(fishImageUrl);
+        this.graphics.anchor.set(0.5, 0.5);
+        this.graphics.width = 160;
+        this.graphics.height = 80;
         this.addChild(this.graphics);
 
-        // HPテキストを作成
-        this.hpText = new Text({
-            text: `HP: ${this.hp}`,
+        // サイズテキストを作成
+        this.sizeText = new Text({
+            text: 'SIZE: 1.00',
             style: {
                 fontSize: 14,
                 fill: 0xffffff,
                 fontWeight: 'bold'
             }
         });
-        this.hpText.anchor.set(0.5, 0.5);
-        this.hpText.y = -this.size - 15;
-        this.addChild(this.hpText);
+        this.sizeText.anchor.set(0.5, 0.5);
+        this.sizeText.y = -this.size - 15;
+        this.addChild(this.sizeText);
     }
 
     /**
@@ -195,14 +196,6 @@ export class Character extends Container {
      * @param {FederatedPointerEvent} event - ポインターイベントオブジェクト
      */
     onPointerUp(event) {
-        if (this.isDragging) {
-            // 球を発射
-            if (this.onShootBall && (this.dragVelocity.x !== 0 || this.dragVelocity.y !== 0)) {
-                this.onShootBall(this.x, this.y, this.dragVelocity.x, this.dragVelocity.y);
-                console.log('球を発射:', this.dragVelocity);
-            }
-        }
-        
         this.isDragging = false;
         console.log('PointerUp: キャラクターが離されました');
     }
@@ -229,6 +222,25 @@ export class Character extends Container {
         this.lastPosition.y = this.y;
         this.x = newX;
         this.y = newY;
+    }
+
+    /**
+     * サイズを拡大する
+     * @method growBy
+     * @param {number} factor - 拡大率
+     */
+    growBy(factor) {
+        if (!this.graphics) {
+            return;
+        }
+
+        this.size *= factor;
+        this.graphics.width *= factor;
+        this.graphics.height *= factor;
+
+        if (this.hitArea && typeof this.hitArea.radius === 'number') {
+            this.hitArea.radius = this.size;
+        }
     }
 
     /**
@@ -268,9 +280,14 @@ export class Character extends Container {
      * @param {number} delta - 前フレームからの経過時間
      */
     update(delta) {
-        // HPテキストを更新
-        if (this.hpText) {
-            this.hpText.text = `HP: ${this.hp}`;
+        if (this.graphics) {
+            const deltaX = this.x - this.lastFlipX;
+            if (deltaX > 0.1) {
+                this.graphics.scale.x = -Math.abs(this.graphics.scale.x);
+            } else if (deltaX < -0.1) {
+                this.graphics.scale.x = Math.abs(this.graphics.scale.x);
+            }
+            this.lastFlipX = this.x;
         }
     }
 }
