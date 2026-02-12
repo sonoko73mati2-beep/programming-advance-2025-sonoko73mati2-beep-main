@@ -106,14 +106,21 @@ export class Ending extends Container {
      * @private
      */
     init() {
+        console.log('Ending init - isVictory:', this.isVictory);
         this.setupBackground();
         this.setupTexts();
         this.setupInteraction();
 
         if (this.isVictory === false) {
+            console.log('Playing Game Over enter sound');
             this.playGameOverEnterSound();
         }
         if (this.isVictory === 'timeup') {
+            console.log('Playing Time Up sound');
+            this.playTimeUpSound();
+        }
+        if (this.isVictory === true) {
+            console.log('Playing Victory sound');
             this.playTimeUpSound();
         }
     }
@@ -139,12 +146,19 @@ export class Ending extends Container {
      * @private
      */
     playTimeUpSound() {
+        console.log('playTimeUpSound() called - URL:', timeUpSoundUrl);
         this.timeUpSound = new Audio(timeUpSoundUrl);
         this.timeUpSound.volume = 0.6;
+        console.log('Audio element created:', this.timeUpSound);
 
         const playPromise = this.timeUpSound.play();
+        console.log('Play promise:', playPromise);
         if (playPromise && typeof playPromise.catch === 'function') {
-            playPromise.catch(() => {});
+            playPromise.then(() => {
+                console.log('Audio is now playing');
+            }).catch((error) => {
+                console.error('Error playing audio:', error);
+            });
         }
     }
 
@@ -254,13 +268,13 @@ export class Ending extends Container {
         this.eventMode = 'static';
         this.cursor = 'pointer';
 
-        if (this.isVictory === false || this.isVictory === 'timeup') {
+        if (this.isVictory === false || this.isVictory === 'timeup' || this.isVictory === true) {
             this.gameOverSound = new Audio(gameOverSoundUrl);
             this.gameOverSound.volume = 0.6;
         }
 
         this.on('pointerdown', () => {
-            if ((this.isVictory === false || this.isVictory === 'timeup') && this.gameOverSound) {
+            if ((this.isVictory === false || this.isVictory === 'timeup' || this.isVictory === true) && this.gameOverSound) {
                 this.gameOverSound.currentTime = 0;
                 const playPromise = this.gameOverSound.play();
                 if (playPromise && typeof playPromise.catch === 'function') {
