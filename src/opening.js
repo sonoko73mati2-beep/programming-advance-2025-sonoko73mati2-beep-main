@@ -4,7 +4,9 @@
  * @version 1.0.0
  */
 
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Text, Sprite } from 'pixi.js';
+import titleImageUrl from '../assets/title.PNG';
+import startButtonImageUrl from '../assets/start_button.PNG';
 
 /**
  * オープニング画面クラス
@@ -36,18 +38,11 @@ export class Opening extends Container {
         this.background = null;
 
         /**
-         * タイトルテキスト
-         * @type {Text}
+         * スタートボタン
+         * @type {Sprite}
          * @private
          */
-        this.titleText = null;
-
-        /**
-         * 説明テキスト
-         * @type {Text}
-         * @private
-         */
-        this.instructionText = null;
+        this.startButton = null;
 
         /**
          * 完了時のコールバック関数
@@ -77,9 +72,28 @@ export class Opening extends Container {
     setupBackground() {
         const { width, height } = this.getStageSize();
 
-        this.background = new Graphics();
-        this.background.rect(0, 0, width, height);
-        this.background.fill(0x2c3e50);
+        this.background = Sprite.from(titleImageUrl);
+        
+        // 画像の本来のアスペクト比を取得
+        const imageAspectRatio = this.background.texture.width / this.background.texture.height;
+        const screenAspectRatio = width / height;
+        
+        // アスペクト比を保ったまま、画面全体をカバーするようにスケーリング
+        if (imageAspectRatio > screenAspectRatio) {
+            // 画像が横長の場合は高さに合わせる
+            this.background.height = height;
+            this.background.width = height * imageAspectRatio;
+        } else {
+            // 画像が縦長の場合は幅に合わせる
+            this.background.width = width;
+            this.background.height = width / imageAspectRatio;
+        }
+        
+        // 中央に配置
+        this.background.anchor.set(0.5);
+        this.background.x = width / 2;
+        this.background.y = height / 2;
+        
         this.addChild(this.background);
     }
 
@@ -89,37 +103,7 @@ export class Opening extends Container {
      * @private
      */
     setupTexts() {
-        const { width, height } = this.getStageSize();
-
-        // タイトルテキスト
-        this.titleText = new Text({
-            text: 'Monster Battle',
-            style: {
-                fontSize: 64,
-                fill: 0xffffff,
-                fontWeight: 'bold',
-                align: 'center'
-            }
-        });
-        this.titleText.anchor.set(0.5);
-        this.titleText.x = width / 2;
-        this.titleText.y = height / 2 - 50;
-        this.addChild(this.titleText);
-
-        // 説明テキスト
-        this.instructionText = new Text({
-            text: 'キャラクターをドラッグして球を発射！\nモンスターを倒そう！\n\nクリックしてスタート',
-            style: {
-                fontSize: 24,
-                fill: 0xecf0f1,
-                align: 'center',
-                lineHeight: 40
-            }
-        });
-        this.instructionText.anchor.set(0.5);
-        this.instructionText.x = width / 2;
-        this.instructionText.y = height / 2 + 80;
-        this.addChild(this.instructionText);
+        // テキストは不要のため削除
     }
 
     /**
@@ -128,14 +112,33 @@ export class Opening extends Container {
      * @private
      */
     setupInteraction() {
-        this.eventMode = 'static';
-        this.cursor = 'pointer';
+        const { width, height } = this.getStageSize();
 
-        this.on('pointerdown', () => {
+        // スタートボタンを作成
+        this.startButton = Sprite.from(startButtonImageUrl);
+        this.startButton.anchor.set(0.5);
+        this.startButton.x = width / 2;
+        this.startButton.y = height / 2 + 200;
+        this.startButton.scale.set(0.7);
+        this.startButton.eventMode = 'static';
+        this.startButton.cursor = 'pointer';
+
+        // ホバーエフェクト
+        this.startButton.on('pointerover', () => {
+            this.startButton.scale.set(0.77);
+        });
+
+        this.startButton.on('pointerout', () => {
+            this.startButton.scale.set(0.7);
+        });
+
+        this.startButton.on('pointerdown', () => {
             if (this.onComplete) {
                 this.onComplete();
             }
         });
+
+        this.addChild(this.startButton);
     }
 
     /**

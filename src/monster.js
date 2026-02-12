@@ -102,7 +102,7 @@ export class Monster extends Container {
          */
         this.velocity = { x: 0, y: 0 };
 
-        const speed = 0.3 + Math.random() * 0.2;
+        const speed = 0.6 + Math.random() * 0.2;
         const angle = Math.random() * Math.PI * 2;
         this.velocity.x = Math.cos(angle) * speed;
         this.velocity.y = Math.sin(angle) * speed;

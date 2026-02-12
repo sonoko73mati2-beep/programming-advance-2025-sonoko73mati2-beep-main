@@ -4,7 +4,8 @@
  * @version 1.0.0
  */
 
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Text, Sprite } from 'pixi.js';
+import backgroundImageUrl from '../assets/background.jpg';
 
 /**
  * エンディング画面クラス
@@ -17,9 +18,10 @@ export class Ending extends Container {
      * Endingクラスのコンストラクタ
      * @constructor
      * @param {Application} app - PixiJSアプリケーションインスタンス
-     * @param {boolean} isVictory - 勝利したかどうか
+     * @param {boolean|string} isVictory - 勝利したかどうか、または'timeup'
+     * @param {number} score - 最終スコア
      */
-    constructor(app, isVictory = true) {
+    constructor(app, isVictory = true, score = 0) {
         super();
 
         /**
@@ -31,10 +33,17 @@ export class Ending extends Container {
 
         /**
          * 勝利フラグ
-         * @type {boolean}
+         * @type {boolean|string}
          * @private
          */
         this.isVictory = isVictory;
+
+        /**
+         * 最終スコア
+         * @type {number}
+         * @private
+         */
+        this.score = score;
 
         /**
          * 背景グラフィックスオブジェクト
@@ -85,10 +94,17 @@ export class Ending extends Container {
     setupBackground() {
         const { width, height } = this.getStageSize();
 
-        const backgroundColor = this.isVictory ? 0x27ae60 : 0xe74c3c;
-        this.background = new Graphics();
-        this.background.rect(0, 0, width, height);
-        this.background.fill(backgroundColor);
+        if (this.isVictory === false) {
+            // Game Overの場合は真っ黒な背景
+            this.background = new Graphics();
+            this.background.rect(0, 0, width, height);
+            this.background.fill(0x000000);
+        } else {
+            // Victory または Time Upの場合は背景画像を表示
+            this.background = Sprite.from(backgroundImageUrl);
+            this.background.width = width;
+            this.background.height = height;
+        }
         this.addChild(this.background);
     }
 
@@ -101,7 +117,12 @@ export class Ending extends Container {
         const { width, height } = this.getStageSize();
 
         // 結果テキスト
-        const resultMessage = this.isVictory ? 'Victory!' : 'Game Over';
+        let resultMessage;
+        if (this.isVictory === 'timeup') {
+            resultMessage = 'Time Up!';
+        } else {
+            resultMessage = this.isVictory ? 'Victory!' : 'Game Over';
+        }
         this.resultText = new Text({
             text: resultMessage,
             style: {
@@ -113,8 +134,25 @@ export class Ending extends Container {
         });
         this.resultText.anchor.set(0.5);
         this.resultText.x = width / 2;
-        this.resultText.y = height / 2 - 50;
+        this.resultText.y = height / 2 - 80;
         this.addChild(this.resultText);
+
+        // スコアテキスト
+        if (this.isVictory === 'timeup' || this.score > 0) {
+            this.scoreText = new Text({
+                text: `SCORE: ${this.score.toFixed(2)}`,
+                style: {
+                    fontSize: 48,
+                    fill: 0xffff00,
+                    fontWeight: 'bold',
+                    align: 'center'
+                }
+            });
+            this.scoreText.anchor.set(0.5);
+            this.scoreText.x = width / 2;
+            this.scoreText.y = height / 2 + 20;
+            this.addChild(this.scoreText);
+        }
 
         // 説明テキスト
         this.instructionText = new Text({
@@ -127,7 +165,7 @@ export class Ending extends Container {
         });
         this.instructionText.anchor.set(0.5);
         this.instructionText.x = width / 2;
-        this.instructionText.y = height / 2 + 80;
+        this.instructionText.y = height / 2 + 100;
         this.addChild(this.instructionText);
     }
 

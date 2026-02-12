@@ -4,12 +4,15 @@
  * @version 2.0.0
  */
 
-import { Container, Graphics, Rectangle, Sprite } from 'pixi.js';
+import { Container, Graphics, Rectangle, Sprite, Text } from 'pixi.js';
 import { Character } from './character.js';
 import { Monster } from './monster.js';
+import subFishImageUrl from '../assets/Subfish_1.PNG';
 import subFish2ImageUrl from '../assets/Subfish_2.PNG';
 import subFish3ImageUrl from '../assets/Subfish_3.PNG';
 import subFish4ImageUrl from '../assets/Subfish_4.PNG';
+import subFish5ImageUrl from '../assets/Subfish_5.PNG';
+import sharkImageUrl from '../assets/shark.PNG';
 import backgroundImageUrl from '../assets/background.jpg';
 
 /**
@@ -85,7 +88,7 @@ export class Game extends Container {
          * @type {number}
          * @private
          */
-        this.keyMoveSpeed = 4;
+        this.keyMoveSpeed = 6;
 
         /**
          * 最後にモンスターをスポーンした時刻
@@ -100,7 +103,40 @@ export class Game extends Container {
          * @private
          */
         this.spawnInterval = 6000;
+        /**
+         * スコア（倒したモンスターのSIZE合計）
+         * @type {number}
+         * @private
+         */
+        this.score = 0;
 
+        /**
+         * スコアテキスト
+         * @type {Text}
+         * @private
+         */
+        this.scoreText = null;
+
+        /**
+         * ゲーム開始時刻
+         * @type {number}
+         * @private
+         */
+        this.startTime = Date.now();
+
+        /**
+         * 制限時間（ミリ秒）
+         * @type {number}
+         * @private
+         */
+        this.timeLimit = 20000;
+
+        /**
+         * タイマーテキスト
+         * @type {Text}
+         * @private
+         */
+        this.timerText = null;
         this.init();
     }
 
@@ -120,6 +156,7 @@ export class Game extends Container {
         this.setupDragListeners();
         this.setupGameEndListener();
         this.setupKeyboardControls();
+        this.setupUI();
 
         window.addEventListener('resize', () => {
             this.onResize();
@@ -173,10 +210,12 @@ export class Game extends Container {
      * ゲームを終了する
      * @method endGame
      * @param {boolean} victory - 勝利したかどうか
+     * @param {number} score - 最終スコア
      * @private
      */
-    endGame(victory) {
+    endGame(victory, score = null) {
         this.isVictory = victory;
+        const finalScore = score !== null ? score : this.score;
         
         // イベントリスナーをクリーンアップ
         if (this.keyPressHandler) {
@@ -193,7 +232,7 @@ export class Game extends Container {
         
         // コールバックを呼び出し
         if (this.onComplete) {
-            this.onComplete(this.isVictory);
+            this.onComplete(this.isVictory, finalScore);
         }
     }
 
@@ -301,10 +340,10 @@ export class Game extends Container {
 
         // 6つの異なる色（少し暗めの色）
         const colors = [0x8b0000, 0x006400, 0xff8c00, 0x2f4f4f, 0x556b2f, 0x4b0082];
-        const sizes = [40, 45, 50, 55, 60, 65];
+        const sizes = [40, 45, 50, 55, 45, 45, 45, 45, 50, 50, 50, 50, 10, 10, 10, 100, 35, 35, 35];
 
-        for (let i = 0; i < 12; i++) {
-            const size = sizes[i % 4];
+        for (let i = 0; i < 19; i++) {
+            const size = sizes[i % sizes.length];
             let randomX = 0;
             let randomY = 0;
             let attempts = 0;
@@ -349,10 +388,23 @@ export class Game extends Container {
 
             // モンスターをインスタンス化（攻撃力を指定）
             const attackPower = 10 + i * 5; // 各モンスターで異なる攻撃力
-            const fishType = Math.floor(i / 4); // 0-3: type0, 4-7: type1, 8-11: type2
-            const imageUrl = fishType === 0 ? subFish2ImageUrl : fishType === 1 ? subFish3ImageUrl : fishType === 2 ? subFish4ImageUrl : undefined;
-            const scaleX = fishType === 0 ? 2 : fishType === 2 ? 2.5 : fishType === 3 ? 2 : 1;
-            const scaleY = fishType === 0 ? 4 : fishType === 2 ? 2.5 : fishType === 3 ? 2 : 1;
+            let fishType;
+            if (i < 4) {
+                fishType = 0; // Subfish_2
+            } else if (i < 8) {
+                fishType = 1; // Subfish_3
+            } else if (i < 12) {
+                fishType = 2; // Subfish_4
+            } else if (i < 15) {
+                fishType = 4; // Subfish_5
+            } else if (i < 16) {
+                fishType = 5; // Shark
+            } else {
+                fishType = 3; // Subfish_1
+            }
+            const imageUrl = fishType === 0 ? subFish2ImageUrl : fishType === 1 ? subFish3ImageUrl : fishType === 2 ? subFish4ImageUrl : fishType === 3 ? subFishImageUrl : fishType === 4 ? subFish5ImageUrl : fishType === 5 ? sharkImageUrl : undefined;
+            const scaleX = fishType === 0 ? 3 : fishType === 1 ? 1.8 : fishType === 2 ? 2.5 : fishType === 3 ? 4 : fishType === 4 ? 3 : fishType === 5 ? 2 : 1;
+            const scaleY = fishType === 0 ? 4 : fishType === 1 ? 1.8 : fishType === 2 ? 2.5 : fishType === 3 ? 4 : fishType === 4 ? 3 : fishType === 5 ? 2 : 1;
             const monster = new Monster(
                 randomX,
                 randomY,
@@ -379,6 +431,41 @@ export class Game extends Container {
     }
 
     /**
+     * UIの初期化（スコアとタイマー）
+     * @method setupUI
+     * @private
+     */
+    setupUI() {
+        const { width } = this.getStageSize();
+
+        // スコア表示
+        this.scoreText = new Text({
+            text: 'SCORE: 0.00',
+            style: {
+                fontSize: 24,
+                fill: 0xffffff,
+                fontWeight: 'bold'
+            }
+        });
+        this.scoreText.x = width - 200;
+        this.scoreText.y = 20;
+        this.addChild(this.scoreText);
+
+        // タイマー表示
+        this.timerText = new Text({
+            text: 'TIME: 20.0',
+            style: {
+                fontSize: 24,
+                fill: 0xffffff,
+                fontWeight: 'bold'
+            }
+        });
+        this.timerText.x = width - 200;
+        this.timerText.y = 60;
+        this.addChild(this.timerText);
+    }
+
+    /**
      * 画面端からモンスターをスポーンする
      * @method spawnMonster
      * @private
@@ -386,10 +473,10 @@ export class Game extends Container {
     spawnMonster() {
         const { width, height } = this.getStageSize();
         
-        // Subfish_3のみを生成
-        const fishType = 1;
-        const sizes = [40, 45, 50, 55];
-        const colors = [0x8b0000, 0x006400, 0xff8c00, 0x2f4f4f];
+        // Subfish_1-5からランダムに選択
+        const fishType = Math.floor(Math.random() * 5);
+        const sizes = [40, 45, 50, 55, 10];
+        const colors = [0x8b0000, 0x006400, 0xff8c00, 0x2f4f4f, 0x800080];
         const size = sizes[fishType];
         
         // ランダムに画面端を選択（0=上, 1=右, 2=下, 3=左）
@@ -416,9 +503,9 @@ export class Game extends Container {
         }
         
         const attackPower = 10 + fishType * 5;
-        const imageUrl = fishType === 0 ? subFish2ImageUrl : fishType === 1 ? subFish3ImageUrl : fishType === 2 ? subFish4ImageUrl : undefined;
-        const scaleX = fishType === 0 ? 2 : fishType === 2 ? 2.5 : fishType === 3 ? 2 : 1;
-        const scaleY = fishType === 0 ? 4 : fishType === 2 ? 2.5 : fishType === 3 ? 2 : 1;
+        const imageUrl = fishType === 0 ? subFish2ImageUrl : fishType === 1 ? subFish3ImageUrl : fishType === 2 ? subFish4ImageUrl : fishType === 3 ? subFishImageUrl : subFish5ImageUrl;
+        const scaleX = fishType === 0 ? 3 : fishType === 1 ? 1.8 : fishType === 2 ? 2.5 : fishType === 3 ? 2 : fishType === 4 ? 3 : 1;
+        const scaleY = fishType === 0 ? 4 : fishType === 1 ? 1.8 : fishType === 2 ? 2.5 : fishType === 3 ? 2 : fishType === 4 ? 3 : 1;
         
         const monster = new Monster(
             x,
@@ -470,6 +557,17 @@ export class Game extends Container {
                         monster.velocity.x = 0;
                         monster.velocity.y = 0;
                         character.growBy(1.1);
+
+                        // スコアを加算（キャラクターに対する相対サイズ）
+                        const size1Area = characterWidth * characterHeight / (1.1 * 1.1); // 成長前のサイズ
+                        const monsterSize = monsterArea / size1Area;
+                        this.score += monsterSize;
+                        if (this.scoreText) {
+                            this.scoreText.text = `SCORE: ${this.score.toFixed(2)}`;
+                        }
+
+                        // 敵を画面から削除
+                        this.removeChild(monster);
                     } else {
                         this.endGame(false);
                         return;
@@ -530,6 +628,19 @@ export class Game extends Container {
         if (currentTime - this.lastSpawnTime >= this.spawnInterval) {
             this.spawnMonster();
             this.lastSpawnTime = currentTime;
+        }
+
+        // タイマー更新
+        const elapsed = currentTime - this.startTime;
+        const remaining = Math.max(0, (this.timeLimit - elapsed) / 1000);
+        if (this.timerText) {
+            this.timerText.text = `TIME: ${remaining.toFixed(1)}`;
+        }
+
+        // 時間切れチェック
+        if (elapsed >= this.timeLimit) {
+            this.endGame('timeup', this.score); // 時間切れで終了
+            return;
         }
 
         for (const character of this.characters) {
