@@ -6,6 +6,8 @@
 
 import { Container, Graphics, Rectangle } from 'pixi.js';
 import { Character } from './character.js';
+import { Monster } from './monster.js';
+import { Ball } from './ball.js';
 
 /**
  * ゲームのメイン画面クラス
@@ -43,6 +45,33 @@ export class Game extends Container {
          */
         this.characters = [];
 
+        /**
+         * モンスターインスタンス配列
+         * @type {Monster[]}
+         * @private
+         */
+        this.monsters = [];
+
+        /**
+         * 球インスタンス配列
+         * @type {Ball[]}
+         * @private
+         */
+        this.balls = [];
+
+        /**
+         * ゲーム完了時のコールバック関数
+         * @type {Function|null}
+         */
+        this.onComplete = null;
+
+        /**
+         * ゲーム結果（勝利/敗北）
+         * @type {boolean}
+         * @private
+         */
+        this.isVictory = false;
+
         this.init();
     }
 
@@ -58,11 +87,51 @@ export class Game extends Container {
 
         this.setupBackground();
         this.setupCharacter();
+        this.setupMonster();
         this.setupDragListeners();
+        this.setupGameEndListener();
 
         window.addEventListener('resize', () => {
             this.onResize();
         });
+    }
+
+    /**
+     * ゲーム終了リスナーのセットアップ
+     * @method setupGameEndListener
+     * @private
+     */
+    setupGameEndListener() {
+        // Escapeキーでゲーム終了（テスト用）
+        const handleKeyPress = (event) => {
+            if (event.key === 'Escape') {
+                this.endGame(true);
+            }
+        };
+        window.addEventListener('keydown', handleKeyPress);
+        
+        // クリーンアップ用に参照を保持
+        this.keyPressHandler = handleKeyPress;
+    }
+
+    /**
+     * ゲームを終了する
+     * @method endGame
+     * @param {boolean} victory - 勝利したかどうか
+     * @private
+     */
+    endGame(victory) {
+        this.isVictory = victory;
+        
+        // イベントリスナーをクリーンアップ
+        if (this.keyPressHandler) {
+            window.removeEventListener('keydown', this.keyPressHandler);
+        }
+        
+        // コールバックを呼び出し
+        if (this.onComplete) {
+            this.onComplete(this.isVictory);
+        }
     }
 
     /**
@@ -145,18 +214,39 @@ export class Game extends Container {
     setupCharacter() {
         const { width, height } = this.getStageSize();
 
-        // 3つの異なる色
-        const colors = [0xff6b6b, 0x4ecdc4, 0xffe66d];
+        // ランダムな位置を生成
+        const randomX = Math.random() * (width - 100) + 50;
+        const randomY = Math.random() * (height - 100) + 50;
+
+        // キャラクターをインスタンス化（1体のみ、モンスターの1/2のサイズ）
+        const character = new Character(randomX, randomY, 25, 0xff6b6b);        
+        // 球発射時のコールバックを設定
+        character.onShootBall = (x, y, vx, vy) => this.shootBall(x, y, vx, vy);
+                this.addChild(character);
+        this.characters.push(character);
+    }
+
+    /**
+     * モンスターのセットアップ
+     * @method setupMonster
+     * @private
+     */
+    setupMonster() {
+        const { width, height } = this.getStageSize();
+
+        // 3つの異なる色（少し暗めの色）
+        const colors = [0x8b0000, 0x006400, 0xff8c00];
 
         for (let i = 0; i < 3; i++) {
             // ランダムな位置を生成
             const randomX = Math.random() * (width - 100) + 50;
             const randomY = Math.random() * (height - 100) + 50;
 
-            // キャラクターをインスタンス化
-            const character = new Character(randomX, randomY, 50, colors[i]);
-            this.addChild(character);
-            this.characters.push(character);
+            // モンスターをインスタンス化（攻撃力を指定）
+            const attackPower = 10 + i * 5; // 各モンスターで異なる攻撃力
+            const monster = new Monster(randomX, randomY, 50, colors[i], attackPower);
+            this.addChild(monster);
+            this.monsters.push(monster);
         }
     }
 
@@ -170,67 +260,90 @@ export class Game extends Container {
     }
 
     /**
-     * 円同士の衝突判定と反発処理
+     * 球を発射する
+     * @method shootBall
+     * @param {number} x - 発射位置X
+     * @param {number} y - 発射位置Y
+     * @param {number} velocityX - X方向の速度
+     * @param {number} velocityY - Y方向の速度
+     * @private
+     */
+    shootBall(x, y, velocityX, velocityY) {
+        const ball = new Ball(x, y, velocityX, velocityY);
+        this.addChild(ball);
+        this.balls.push(ball);
+        console.log('球を作成:', ball);
+    }
+
+    /**
+     * キャラクターとモンスターの当たり判定
      * @method checkCollisions
      * @private
      */
     checkCollisions() {
-        // すべてのキャラクターペアをチェック
-        for (let i = 0; i < this.characters.length; i++) {
-            for (let j = i + 1; j < this.characters.length; j++) {
-                const char1 = this.characters[i];
-                const char2 = this.characters[j];
-
+        for (const character of this.characters) {
+            for (const monster of this.monsters) {
                 // 中心間の距離を計算
-                const dx = char2.x - char1.x;
-                const dy = char2.y - char1.y;
+                const dx = monster.x - character.x;
+                const dy = monster.y - character.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 // 2つの円の半径の合計
-                const minDistance = char1.size + char2.size;
+                const minDistance = character.size + monster.size;
 
                 // 衝突判定
-                if (distance < minDistance && distance > 0) {
-                    // 衝突している場合
+                if (distance < minDistance) {
+                    // ダメージ処理（無敵時間を考慮）
+                    character.takeDamage(monster.attackPower);
 
-                    // 正規化された衝突方向ベクトル
+                    // 重ならないように離す
+                    const overlap = minDistance - distance;
                     const nx = dx / distance;
                     const ny = dy / distance;
+                    character.x -= nx * overlap * 0.5;
+                    character.y -= ny * overlap * 0.5;
+                    monster.x += nx * overlap * 0.5;
+                    monster.y += ny * overlap * 0.5;
+                }
+            }
+        }
 
-                    // 重なりを解消（円を離す）
-                    const overlap = minDistance - distance;
-                    const separationX = nx * overlap * 0.5;
-                    const separationY = ny * overlap * 0.5;
+        // 球とモンスターの当たり判定
+        for (let i = this.balls.length - 1; i >= 0; i--) {
+            const ball = this.balls[i];
+            let ballHit = false;
 
-                    char1.x -= separationX;
-                    char1.y -= separationY;
-                    char2.x += separationX;
-                    char2.y += separationY;
+            for (const monster of this.monsters) {
+                // 中心間の距離を計算
+                const dx = monster.x - ball.x;
+                const dy = monster.y - ball.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
 
-                    // 相対速度を計算
-                    const relativeVelocityX = char2.velocity.x - char1.velocity.x;
-                    const relativeVelocityY = char2.velocity.y - char1.velocity.y;
+                // 2つの円の半径の合計
+                const minDistance = ball.size + monster.size;
 
-                    // 衝突方向の相対速度成分
-                    const velocityAlongNormal = relativeVelocityX * nx + relativeVelocityY * ny;
-
-                    // 既に離れている場合は処理しない
-                    if (velocityAlongNormal > 0) {
-                        continue;
+                // 衝突判定
+                if (distance < minDistance) {
+                    // モンスターにダメージを与える（球の威力を使用）
+                    monster.hp -= ball.power;
+                    console.log(`球がモンスターに衝突！ダメージ: ${ball.power}, モンスターHP: ${monster.hp}`);
+                    
+                    // モンスターのHPが0以下になった場合
+                    if (monster.hp <= 0) {
+                        console.log('モンスターが倒されました！');
+                        monster.hp = 0;
+                        monster.alpha = 0.5; // 半透明にする
                     }
 
-                    // 反発係数（0〜1、1で完全弾性衝突）
-                    const restitution = 0.8;
-
-                    // 衝突後の速度変化量
-                    const impulse = -(1 + restitution) * velocityAlongNormal / 2;
-
-                    // 速度を更新（質量は同じと仮定）
-                    char1.velocity.x -= impulse * nx;
-                    char1.velocity.y -= impulse * ny;
-                    char2.velocity.x += impulse * nx;
-                    char2.velocity.y += impulse * ny;
+                    ballHit = true;
+                    break;
                 }
+            }
+
+            // 球がモンスターに衝突した場合、球を削除
+            if (ballHit) {
+                this.removeChild(ball);
+                this.balls.splice(i, 1);
             }
         }
     }
@@ -245,9 +358,36 @@ export class Game extends Container {
 
         for (const character of this.characters) {
             character.update(delta, bounds);
+            
+            // キャラクターが死亡したか判定
+            if (character.hp <= 0) {
+                this.endGame(false); // 敗北
+                return;
+            }
+        }
+        
+        for (const monster of this.monsters) {
+            monster.update(delta, bounds);
         }
 
-        // キャラクター同士の衝突判定
+        // 球を更新し、画面外に出た球を削除
+        for (let i = this.balls.length - 1; i >= 0; i--) {
+            const ball = this.balls[i];
+            const isAlive = ball.update(delta, bounds);
+            if (!isAlive) {
+                this.removeChild(ball);
+                this.balls.splice(i, 1);
+            }
+        }
+
+        // 当たり判定をチェック
         this.checkCollisions();
+        
+        // すべてのモンスターが倒されたか判定
+        const allMonstersDefeated = this.monsters.every(monster => monster.hp <= 0);
+        if (allMonstersDefeated && this.monsters.length > 0) {
+            this.endGame(true); // 勝利
+            return;
+        }
     }
 }
