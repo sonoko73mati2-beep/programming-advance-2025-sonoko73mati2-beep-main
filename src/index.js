@@ -4,10 +4,28 @@
  * @version 2.0.0
  */
 
-import { Application } from 'pixi.js';
+import { Application, Assets } from 'pixi.js';
 import { Opening } from './opening.js';
 import { Game } from './game.js';
 import { Ending } from './ending.js';
+import fishImageUrl from '../assets/fish.png';
+import subFishImageUrl from '../assets/Subfish_1.PNG';
+import subFish2ImageUrl from '../assets/Subfish_2.PNG';
+import subFish3ImageUrl from '../assets/Subfish_3.PNG';
+import subFish4ImageUrl from '../assets/Subfish_4.PNG';
+import subFish5ImageUrl from '../assets/Subfish_5.PNG';
+import sharkImageUrl from '../assets/shark.PNG';
+import bgmUrl from '../assets/437_long_BPM120.mp3';
+import backgroundImageUrl from '../assets/background.jpg';
+import titleImageUrl from '../assets/title.PNG';
+import startButtonImageUrl from '../assets/start_button.PNG';
+import startSoundUrl from '../assets/効果音１.mp3';
+import gameOverSoundUrl from '../assets/効果音２.mp3';
+import gameOverEnterSoundUrl from '../assets/効果音３.mp3';
+import timeUpSoundUrl from '../assets/効果音４.mp3';
+import patSoundUrl from '../assets/パッ.mp3';
+import papaSoundUrl from '../assets/パパッ.mp3';
+import petaSoundUrl from '../assets/ペタッ.mp3';
 
 /**
  * PixiJSアプリケーションの初期化クラス
@@ -37,6 +55,8 @@ class Init {
      */
     async setup() {
         this.app = new Application();
+
+        await Assets.load([fishImageUrl, subFishImageUrl, subFish2ImageUrl, subFish3ImageUrl, subFish4ImageUrl, subFish5ImageUrl, sharkImageUrl, bgmUrl, backgroundImageUrl, titleImageUrl, startButtonImageUrl, startSoundUrl, gameOverSoundUrl, gameOverEnterSoundUrl, timeUpSoundUrl, patSoundUrl, papaSoundUrl, petaSoundUrl]);
 
         await this.app.init({
             width: window.innerWidth,
@@ -172,8 +192,8 @@ class GameManager {
         this.clearScene();
 
         const game = new Game(this.app);
-        game.onComplete = (isVictory) => {
-            this.showEnding(isVictory);
+        game.onComplete = (isVictory, score) => {
+            this.showEnding(isVictory, score);
         };
 
         this.app.stage.addChild(game);
@@ -191,12 +211,13 @@ class GameManager {
     /**
      * エンディング画面を表示
      * @method showEnding
-     * @param {boolean} isVictory - 勝利したかどうか
+     * @param {boolean|string} isVictory - 勝利したかどうか、または'timeup'
+     * @param {number} score - 最終スコア
      */
-    showEnding(isVictory) {
+    showEnding(isVictory, score = 0) {
         this.clearScene();
 
-        const ending = new Ending(this.app, isVictory);
+        const ending = new Ending(this.app, isVictory, score);
         ending.onComplete = () => {
             this.showOpening();
         };
@@ -204,7 +225,7 @@ class GameManager {
         this.app.stage.addChild(ending);
         this.currentScene = ending;
 
-        console.log('Ending画面を表示:', isVictory ? 'Victory' : 'Game Over');
+        console.log('Ending画面を表示:', isVictory === 'timeup' ? 'Time Up' : isVictory ? 'Victory' : 'Game Over', 'Score:', score);
     }
 }
 
