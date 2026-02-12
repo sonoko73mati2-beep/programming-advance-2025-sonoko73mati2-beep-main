@@ -59,6 +59,27 @@ export class Character extends Container {
          */
         this.dragOffset = { x: 0, y: 0 };
 
+        /**
+         * 速度ベクトル
+         * @type {{x: number, y: number}}
+         * @private
+         */
+        this.velocity = { x: 0, y: 0 };
+
+        /**
+         * 直近のポインター位置
+         * @type {{x: number, y: number} | null}
+         * @private
+         */
+        this.lastPointerPos = null;
+
+        /**
+         * 直近のポインター時刻(ms)
+         * @type {number}
+         * @private
+         */
+        this.lastPointerTime = 0;
+
         this.x = x;
         this.y = y;
 
@@ -111,6 +132,11 @@ export class Character extends Container {
      */
     onPointerDown(event) {
         this.isDragging = true;
+        this.velocity.x = 0;
+        this.velocity.y = 0;
+
+        this.lastPointerPos = { x: event.global.x, y: event.global.y };
+        this.lastPointerTime = performance.now();
         const colorHex = '0x' + this.color.toString(16).padStart(6, '0').toUpperCase();
         console.log('PointerDown: キャラクターが押されました');
         console.log('色:', colorHex);
@@ -132,11 +158,73 @@ export class Character extends Container {
     }
 
     /**
+     * ドラッグ中の更新
+     * @method updateDrag
+     * @param {FederatedPointerEvent} event - ポインターイベントオブジェクト
+     */
+    updateDrag(event) {
+        if (!this.isDragging) {
+            return;
+        }
+
+        const now = performance.now();
+        const dt = Math.max(1, now - this.lastPointerTime);
+
+        const dx = event.global.x - (this.lastPointerPos?.x ?? event.global.x);
+        const dy = event.global.y - (this.lastPointerPos?.y ?? event.global.y);
+
+        // 60FPS相当の速度に換算
+        this.velocity.x = (dx / dt) * 16.6667;
+        this.velocity.y = (dy / dt) * 16.6667;
+
+        this.lastPointerPos = { x: event.global.x, y: event.global.y };
+        this.lastPointerTime = now;
+
+        this.x = event.global.x - this.dragOffset.x;
+        this.y = event.global.y - this.dragOffset.y;
+    }
+
+    /**
      * フレーム更新処理
      * @method update
      * @param {number} delta - 前フレームからの経過時間
      */
-    update(delta) {
-        // 必要に応じてアニメーション等を実装
+    update(delta, bounds) {
+        if (this.isDragging) {
+            return;
+        }
+
+        this.x += this.velocity.x * delta;
+        this.y += this.velocity.y * delta;
+
+        this.velocity.x *= 0.98;
+        this.velocity.y *= 0.98;
+
+        if (Math.abs(this.velocity.x) < 0.01) {
+            this.velocity.x = 0;
+        }
+        if (Math.abs(this.velocity.y) < 0.01) {
+            this.velocity.y = 0;
+        }
+
+        if (bounds) {
+            const radius = this.size;
+
+            if (this.x < radius) {
+                this.x = radius;
+                this.velocity.x *= -0.6;
+            } else if (this.x > bounds.width - radius) {
+                this.x = bounds.width - radius;
+                this.velocity.x *= -0.6;
+            }
+
+            if (this.y < radius) {
+                this.y = radius;
+                this.velocity.y *= -0.6;
+            } else if (this.y > bounds.height - radius) {
+                this.y = bounds.height - radius;
+                this.velocity.y *= -0.6;
+            }
+        }
     }
 }
