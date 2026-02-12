@@ -4,10 +4,16 @@
  * @version 2.0.0
  */
 
-import { Application } from 'pixi.js';
+import { Application, Assets } from 'pixi.js';
 import { Opening } from './opening.js';
 import { Game } from './game.js';
 import { Ending } from './ending.js';
+import fishImageUrl from '../assets/fish.png';
+import subFishImageUrl from '../assets/Subfish_1.PNG';
+import subFish2ImageUrl from '../assets/Subfish_2.PNG';
+import subFish3ImageUrl from '../assets/Subfish_3.PNG';
+import subFish4ImageUrl from '../assets/Subfish_4.PNG';
+import backgroundImageUrl from '../assets/background.jpg';
 
 /**
  * PixiJSアプリケーションの初期化クラス
@@ -37,6 +43,8 @@ class Init {
      */
     async setup() {
         this.app = new Application();
+
+        await Assets.load([fishImageUrl, subFishImageUrl, subFish2ImageUrl, subFish3ImageUrl, subFish4ImageUrl, backgroundImageUrl]);
 
         await this.app.init({
             width: window.innerWidth,
