@@ -7,6 +7,7 @@
 import { Container, Graphics, Text, Sprite } from 'pixi.js';
 import titleImageUrl from '../assets/title.PNG';
 import startButtonImageUrl from '../assets/start_button.PNG';
+import startSoundUrl from '../assets/効果音１.mp3';
 
 /**
  * オープニング画面クラス
@@ -43,6 +44,13 @@ export class Opening extends Container {
          * @private
          */
         this.startButton = null;
+
+        /**
+         * スタートボタン効果音
+         * @type {HTMLAudioElement|null}
+         * @private
+         */
+        this.startSound = null;
 
         /**
          * 完了時のコールバック関数
@@ -103,7 +111,36 @@ export class Opening extends Container {
      * @private
      */
     setupTexts() {
-        // テキストは不要のため削除
+        const { width, height } = this.getStageSize();
+
+        // ルール説明1
+        const rulesText1 = new Text({
+            text: '矢印キーで操作',
+            style: {
+                fontSize: 32,
+                fill: 0x000000,
+                fontWeight: 'bold',
+                align: 'center'
+            }
+        });
+        rulesText1.anchor.set(0.5);
+        rulesText1.x = width / 2;
+        rulesText1.y = height / 2 + 320;
+        this.addChild(rulesText1);
+
+        // ルール説明2
+        const rulesText2 = new Text({
+            text: '自分より小さいお魚を食べて成長しよう！',
+            style: {
+                fontSize: 32,
+                fill: 0x000000,
+                align: 'center'
+            }
+        });
+        rulesText2.anchor.set(0.5);
+        rulesText2.x = width / 2;
+        rulesText2.y = height / 2 + 360;
+        this.addChild(rulesText2);
     }
 
     /**
@@ -119,26 +156,36 @@ export class Opening extends Container {
         this.startButton.anchor.set(0.5);
         this.startButton.x = width / 2;
         this.startButton.y = height / 2 + 200;
-        this.startButton.scale.set(0.7);
+        this.startButton.scale.set(0.5);
         this.startButton.eventMode = 'static';
         this.startButton.cursor = 'pointer';
 
         // ホバーエフェクト
         this.startButton.on('pointerover', () => {
-            this.startButton.scale.set(0.77);
+            this.startButton.scale.set(0.55);
         });
 
         this.startButton.on('pointerout', () => {
-            this.startButton.scale.set(0.7);
+            this.startButton.scale.set(0.5);
         });
 
         this.startButton.on('pointerdown', () => {
+            if (this.startSound) {
+                this.startSound.currentTime = 0;
+                const playPromise = this.startSound.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(() => {});
+                }
+            }
             if (this.onComplete) {
                 this.onComplete();
             }
         });
 
         this.addChild(this.startButton);
+
+        this.startSound = new Audio(startSoundUrl);
+        this.startSound.volume = 0.6;
     }
 
     /**

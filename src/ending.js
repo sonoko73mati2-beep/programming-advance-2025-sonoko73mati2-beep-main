@@ -6,6 +6,10 @@
 
 import { Container, Graphics, Text, Sprite } from 'pixi.js';
 import backgroundImageUrl from '../assets/background.jpg';
+import sharkImageUrl from '../assets/shark.PNG';
+import gameOverSoundUrl from '../assets/効果音２.mp3';
+import gameOverEnterSoundUrl from '../assets/効果音３.mp3';
+import timeUpSoundUrl from '../assets/効果音４.mp3';
 
 /**
  * エンディング画面クラス
@@ -67,6 +71,27 @@ export class Ending extends Container {
         this.instructionText = null;
 
         /**
+         * ゲームオーバー効果音
+         * @type {HTMLAudioElement|null}
+         * @private
+         */
+        this.gameOverSound = null;
+
+        /**
+         * ゲームオーバー開始時効果音
+         * @type {HTMLAudioElement|null}
+         * @private
+         */
+        this.gameOverEnterSound = null;
+
+        /**
+         * タイムアップ開始時効果音
+         * @type {HTMLAudioElement|null}
+         * @private
+         */
+        this.timeUpSound = null;
+
+        /**
          * 完了時のコールバック関数
          * @type {Function|null}
          */
@@ -84,6 +109,43 @@ export class Ending extends Container {
         this.setupBackground();
         this.setupTexts();
         this.setupInteraction();
+
+        if (this.isVictory === false) {
+            this.playGameOverEnterSound();
+        }
+        if (this.isVictory === 'timeup') {
+            this.playTimeUpSound();
+        }
+    }
+
+    /**
+     * ゲームオーバー開始時の効果音を再生
+     * @method playGameOverEnterSound
+     * @private
+     */
+    playGameOverEnterSound() {
+        this.gameOverEnterSound = new Audio(gameOverEnterSoundUrl);
+        this.gameOverEnterSound.volume = 0.6;
+
+        const playPromise = this.gameOverEnterSound.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {});
+        }
+    }
+
+    /**
+     * タイムアップ開始時の効果音を再生
+     * @method playTimeUpSound
+     * @private
+     */
+    playTimeUpSound() {
+        this.timeUpSound = new Audio(timeUpSoundUrl);
+        this.timeUpSound.volume = 0.6;
+
+        const playPromise = this.timeUpSound.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {});
+        }
     }
 
     /**
@@ -116,18 +178,32 @@ export class Ending extends Container {
     setupTexts() {
         const { width, height } = this.getStageSize();
 
+        // Game Over画面にsharkを配置
+        if (this.isVictory === false) {
+            const shark = Sprite.from(sharkImageUrl);
+            shark.anchor.set(0.5);
+            shark.x = width / 2;
+            shark.y = height / 2 - 120;
+            shark.scale.set(0.25);
+            this.addChild(shark);
+        }
+
         // 結果テキスト
         let resultMessage;
+        let textColor = 0xffffff; // デフォルトは白
         if (this.isVictory === 'timeup') {
             resultMessage = 'Time Up!';
+        } else if (this.isVictory === false) {
+            resultMessage = 'Game Over';
+            textColor = 0xff0000; // 赤
         } else {
-            resultMessage = this.isVictory ? 'Victory!' : 'Game Over';
+            resultMessage = 'Victory!';
         }
         this.resultText = new Text({
             text: resultMessage,
             style: {
                 fontSize: 72,
-                fill: 0xffffff,
+                fill: textColor,
                 fontWeight: 'bold',
                 align: 'center'
             }
@@ -178,7 +254,19 @@ export class Ending extends Container {
         this.eventMode = 'static';
         this.cursor = 'pointer';
 
+        if (this.isVictory === false || this.isVictory === 'timeup') {
+            this.gameOverSound = new Audio(gameOverSoundUrl);
+            this.gameOverSound.volume = 0.6;
+        }
+
         this.on('pointerdown', () => {
+            if ((this.isVictory === false || this.isVictory === 'timeup') && this.gameOverSound) {
+                this.gameOverSound.currentTime = 0;
+                const playPromise = this.gameOverSound.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(() => {});
+                }
+            }
             if (this.onComplete) {
                 this.onComplete();
             }

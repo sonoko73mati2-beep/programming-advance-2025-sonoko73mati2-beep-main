@@ -15,9 +15,14 @@ import subFish3ImageUrl from '../assets/Subfish_3.PNG';
 import subFish4ImageUrl from '../assets/Subfish_4.PNG';
 import subFish5ImageUrl from '../assets/Subfish_5.PNG';
 import sharkImageUrl from '../assets/shark.PNG';
+import bgmUrl from '../assets/437_long_BPM120.mp3';
 import backgroundImageUrl from '../assets/background.jpg';
 import titleImageUrl from '../assets/title.PNG';
 import startButtonImageUrl from '../assets/start_button.PNG';
+import startSoundUrl from '../assets/効果音１.mp3';
+import gameOverSoundUrl from '../assets/効果音２.mp3';
+import gameOverEnterSoundUrl from '../assets/効果音３.mp3';
+import timeUpSoundUrl from '../assets/効果音４.mp3';
 
 /**
  * PixiJSアプリケーションの初期化クラス
@@ -48,7 +53,7 @@ class Init {
     async setup() {
         this.app = new Application();
 
-        await Assets.load([fishImageUrl, subFishImageUrl, subFish2ImageUrl, subFish3ImageUrl, subFish4ImageUrl, subFish5ImageUrl, sharkImageUrl, backgroundImageUrl, titleImageUrl, startButtonImageUrl]);
+        await Assets.load([fishImageUrl, subFishImageUrl, subFish2ImageUrl, subFish3ImageUrl, subFish4ImageUrl, subFish5ImageUrl, sharkImageUrl, bgmUrl, backgroundImageUrl, titleImageUrl, startButtonImageUrl, startSoundUrl, gameOverSoundUrl, gameOverEnterSoundUrl, timeUpSoundUrl]);
 
         await this.app.init({
             width: window.innerWidth,

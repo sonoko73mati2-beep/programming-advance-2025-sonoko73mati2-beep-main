@@ -13,6 +13,7 @@ import subFish3ImageUrl from '../assets/Subfish_3.PNG';
 import subFish4ImageUrl from '../assets/Subfish_4.PNG';
 import subFish5ImageUrl from '../assets/Subfish_5.PNG';
 import sharkImageUrl from '../assets/shark.PNG';
+import bgmUrl from '../assets/437_long_BPM120.mp3';
 import backgroundImageUrl from '../assets/background.jpg';
 
 /**
@@ -137,6 +138,13 @@ export class Game extends Container {
          * @private
          */
         this.timerText = null;
+
+        /**
+         * BGM音声
+         * @type {HTMLAudioElement|null}
+         * @private
+         */
+        this.bgm = null;
         this.init();
     }
 
@@ -157,6 +165,7 @@ export class Game extends Container {
         this.setupGameEndListener();
         this.setupKeyboardControls();
         this.setupUI();
+        this.setupBgm();
 
         window.addEventListener('resize', () => {
             this.onResize();
@@ -216,6 +225,8 @@ export class Game extends Container {
     endGame(victory, score = null) {
         this.isVictory = victory;
         const finalScore = score !== null ? score : this.score;
+
+        this.stopBgm();
         
         // イベントリスナーをクリーンアップ
         if (this.keyPressHandler) {
@@ -340,9 +351,9 @@ export class Game extends Container {
 
         // 6つの異なる色（少し暗めの色）
         const colors = [0x8b0000, 0x006400, 0xff8c00, 0x2f4f4f, 0x556b2f, 0x4b0082];
-        const sizes = [40, 45, 50, 55, 45, 45, 45, 45, 50, 50, 50, 50, 10, 10, 10, 100, 35, 35, 35];
+        const sizes = [40, 45, 50, 55, 45, 45, 45, 45, 50, 50, 50, 50, 10, 10, 10, 10, 10, 100, 35, 35, 35];
 
-        for (let i = 0; i < 19; i++) {
+        for (let i = 0; i < 21; i++) {
             const size = sizes[i % sizes.length];
             let randomX = 0;
             let randomY = 0;
@@ -395,9 +406,9 @@ export class Game extends Container {
                 fishType = 1; // Subfish_3
             } else if (i < 12) {
                 fishType = 2; // Subfish_4
-            } else if (i < 15) {
+            } else if (i < 17) {
                 fishType = 4; // Subfish_5
-            } else if (i < 16) {
+            } else if (i < 18) {
                 fishType = 5; // Shark
             } else {
                 fishType = 3; // Subfish_1
@@ -463,6 +474,35 @@ export class Game extends Container {
         this.timerText.x = width - 200;
         this.timerText.y = 60;
         this.addChild(this.timerText);
+    }
+
+    /**
+     * BGMのセットアップ
+     * @method setupBgm
+     * @private
+     */
+    setupBgm() {
+        this.bgm = new Audio(bgmUrl);
+        this.bgm.loop = true;
+        this.bgm.volume = 0.4;
+
+        const playPromise = this.bgm.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {});
+        }
+    }
+
+    /**
+     * BGMの停止
+     * @method stopBgm
+     * @private
+     */
+    stopBgm() {
+        if (!this.bgm) {
+            return;
+        }
+        this.bgm.pause();
+        this.bgm.currentTime = 0;
     }
 
     /**
