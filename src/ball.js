@@ -59,7 +59,7 @@ export class Ball extends Container {
          * @type {number}
          * @private
          */
-        this.power = 10;
+        this.power = 60;
 
         this.x = x;
         this.y = y;
