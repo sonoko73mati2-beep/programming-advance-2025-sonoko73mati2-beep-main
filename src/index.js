@@ -1,11 +1,7 @@
 /**
  * @fileoverview アプリケーションのエントリーポイント
  * @description PixiJSアプリケーションの初期化とゲーム画面の起動を行う
-<<<<<<< HEAD
- * @version 0.1.4
-=======
- * @version 0.1.3
->>>>>>> origin/main
+
  */
 
 import { Application, Assets } from 'pixi.js';
