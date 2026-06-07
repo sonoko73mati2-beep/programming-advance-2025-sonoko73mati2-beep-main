@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
     root: '.',
-    base: '/programming-advance-2025-sonoko73mati2-beep-main/',
+    base: '/',
     build: {
         outDir: 'dist',
         assetsDir: 'assets',
