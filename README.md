@@ -6,4 +6,4 @@
 
 ゲームのリンクです
 
-https://github.com/sonoko73mati2-beep/programming-advance-2025-sonoko73mati2-beep-main
+https://fishsurvivalgame.netlify.app/
